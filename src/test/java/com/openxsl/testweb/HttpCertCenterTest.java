@@ -15,8 +15,8 @@ import com.openxsl.config.testuse.AutoConfig;
 import com.openxsl.config.testuse.BasicTest;
 import com.openxsl.config.util.BeanUtils;
 
-@AutoConfig(application="springboot-test")
-@ContextConfiguration(locations="classpath*:spring/dal/http-client.xml")
+@AutoConfig(application="notify-sms")
+//@ContextConfiguration(locations="classpath*:spring/dal/http-client.xml")
 @TestPropertySource(
 		properties= {"spring.component.scanpackage=com.alibaba.druid"}
 	)
@@ -26,6 +26,7 @@ public class HttpCertCenterTest extends BasicTest {
 
 	@Test
 	public void test() throws Exception {
+		super.waitfor();
 		String environ = "DEV";
 		String certId = "1486774364352717";
 //		PublicKey pubKey = cc.getPublicKey(environ, certId);

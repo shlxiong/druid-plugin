@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans 
+    		http://www.springframework.org/schema/beans/spring-beans.xsd
+		    http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		    http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+	<bean id="propertyConfigurer"  
+	    class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">  
+	    <property name="properties">
+	    	<props>
+	    		<prop key="datasource.connectionProperties">
+	    			config.file=/sumpay/conf/springboot-test/sumpay-db.properties;config.decrypt.cert=tomcat-1.0;token=222
+	    		</prop>
+	    	</props>
+	    </property>  
+	</bean> 
+	<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+  		<property name="connectionProperties" value="${datasource.connectionProperties}" />
+	  	<property name="filters" value="config,slf4j" />
+		<property name="proxyFilters">
+		    <list>
+		        <ref bean="stat-filter" />
+		    </list>
+		</property>
+		<!-- <property name="asyncInit" value="true" /> -->
+    </bean>
+    <bean id="stat-filter" class="com.alibaba.druid.filter.stat.StatFilter">
+        <property name="mergeSql" value="true" />  <!--merge noarg-sql，as：mergeStat filter-->
+        <property name="logSlowSql" value="true" />
+		<property name="slowSqlMillis" value="3000" />  <!--more than 3s as slowsql-->
+    </bean>
+    
+    <!-- <bean id="dataSourceNonfilters" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+  		<property name="connectionProperties" value="${datasource.connectionProperties}" />
+  		<property name="asyncInit" value="true" />
+    </bean> -->
+    
+ </beans>

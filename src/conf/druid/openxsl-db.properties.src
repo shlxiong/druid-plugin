@@ -1,0 +1,17 @@
+#
+#Thu Nov 07 10:09:05 CST 2019
+url=jdbc\:mysql\://127.0.0.1\:3306/mysql
+validationQuery=SELECT 'x' from dual
+maxOpenPreparedStatements=100
+maxActive=500
+driverClassName=com.mysql.jdbc.Driver
+maxWait=60000
+testWhileIdle=true
+testOnReturn=false
+username=root
+poolPreparedStatements=true
+minIdle=1
+timeBetweenEvictionRunsMillis=60000
+password=bNVOqb7WKLX5Bjnw+LMv92taj25KOxDimXxILPQjw42wgv+1lHzOH8kr97xDwWdhpY67QuYCS7sWN4W46YbkFA==
+testOnBorrow=false
+initialSize=1

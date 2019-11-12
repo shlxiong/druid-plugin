@@ -58,7 +58,7 @@ public class PasswordManager {
 	private ApplicationContext context;
 	private boolean filterChecked;
 	/**不能对外暴露！！*/
-	private final SumpayPasswordCallback passwordCallback = new SumpayPasswordCallback();
+	private final MyPasswordCallback passwordCallback = new MyPasswordCallback();
 
 	public CC getCC() {
 		if (center == null) {
@@ -161,14 +161,14 @@ public class PasswordManager {
 	 * @author xiongsl
 	 */
 	@SuppressWarnings("serial")
-	class SumpayPasswordCallback extends DruidPasswordCallback{
+	class MyPasswordCallback extends DruidPasswordCallback{
 		private final String ALGORITHM = "RSA/ECB/PKCS1Padding";
 		private final boolean debug;
 		private CertificateManager certMgr;
 		private Cipher machine = null;
 		private byte[] secret;
 		
-		SumpayPasswordCallback() {
+		MyPasswordCallback() {
 			debug = Boolean.parseBoolean(System.getProperty("druid.debug","false"));
 			try {
 				machine = Cipher.getInstance(ALGORITHM);
@@ -204,6 +204,9 @@ public class PasswordManager {
 				synchronized (machine) {
 					try {
 						machine.init(Cipher.DECRYPT_MODE, certMgr.getPrivateKey(certId));
+//						logger.error("password={}", secretText);
+//						byte[] keys = certMgr.getPrivateKey(certId).getEncoded();
+//						logger.error("cert={}, key={}", certId, Base64.byteArrayToBase64(keys));
 						byte[] encoded = Base64.base64ToByteArray(secretText);
 						secret = machine.doFinal(encoded);
 						plainText = new String(secret, "UTF-8");
@@ -463,7 +466,7 @@ public class PasswordManager {
 	public static void main(String[] args) throws Exception {
 		if (args.length<1 || "-help".equals(args[0])) {
 			StringBuilder help = new StringBuilder();
-			help.append("用法: java -jar druid-test-1.1.5-jar-with-dependencies.jar [args...]\n");
+			help.append("用法: java -jar druid-plugin-1.1.5.beta-jar-with-dependencies.jar [args...]\n");
 			help.append("其中选项包括:\n");
 			help.append("-alias       证书名称\n")
 				.append("-storePass   证书密码\n")
@@ -473,13 +476,13 @@ public class PasswordManager {
 			System.out.println(help.toString());
 			return;
 		}
-		
-		KeyStoreUtils.generCommands("hello", "!abcd :!~@#$%^*-_+={}[]", "1.0");
+//		System.out.println(ConfigTools.encrypt("root"));
+//		System.exit(-1);
 		
 		PasswordManager manager = new PasswordManager();
-		SumpayPasswordCallback callback = manager.passwordCallback;
+		MyPasswordCallback callback = manager.passwordCallback;
 		callback.setCC(manager.getCC());
-		//性能测试
+		/*/性能测试
 		String plainPswd = "yu23m32_kjde";
 		String secretText = callback.encrypt(plainPswd, "tomcat-1.0");
 		long start = System.currentTimeMillis();
@@ -488,7 +491,8 @@ public class PasswordManager {
 			callback.decrypt(secretText, "tomcat-1.0");
 		}
 		System.out.printf("run %d spends %d ms", loop,(System.currentTimeMillis()-start));
-		/*
+		*/
+		
 		String alias = args.length>0 ? args[0] : "tomcat";
 		String keyPass = args.length>1 ? args[1] : "123456";
 		String version = args.length>2 ? args[2] : "1.0";
@@ -542,7 +546,7 @@ public class PasswordManager {
 			
 			String sourced = callback.getPasswords();
 			System.out.println("解密明文："+sourced);
-		}*/
+		}
 	}
 	
 	/**
@@ -628,7 +632,7 @@ public class PasswordManager {
 		public PrivateKey getPrivateKey(String environ, String certId) throws IOException {
 			String storePass = this.get(certId);
 			File certFile = new File(keystoreDir, certId+".jks");
-			if (certFile.exists()) {
+			if (!certFile.exists()) {
 				certFile = new File(keystoreDir, certId+".pfx");
 			}
 			try {

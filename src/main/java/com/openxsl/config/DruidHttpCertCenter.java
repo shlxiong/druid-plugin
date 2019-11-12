@@ -1,11 +1,8 @@
 package com.openxsl.config;
 
 import java.io.IOException;
-import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -14,10 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.alibaba.druid.filter.config.ConfigTools;
+import com.alibaba.druid.pool.DruidConfigTool;
 import com.alibaba.druid.pool.PasswordManager.CC;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.openxsl.config.condition.ConditionalOnPresent;
 
 /**
  * 从远程文件服务器（证书中心）获取证书公私钥
@@ -25,6 +23,7 @@ import com.alibaba.fastjson.JSONObject;
  * @author xiongsl
  */
 @Component
+@ConditionalOnPresent(properties="spring.jdbc.druid.cert.server")
 public class DruidHttpCertCenter implements CC {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	@Autowired
@@ -46,6 +45,7 @@ public class DruidHttpCertCenter implements CC {
 	/**
 	 * 加载环境中(environ)的所有的公私钥证书
 	 * @throws IOException 
+	 * @see PasswordManager
 	 */
 	@Override
 	public void listSecureKeys(String environ, Map<String, PublicKey> publicKeyMap,
@@ -60,8 +60,8 @@ public class DruidHttpCertCenter implements CC {
 		privateKeyMap.clear();
 		for (Map.Entry<String,?> entry : privateKeys.entrySet()) {
 			try {
-				byte[] data = ConfigTools.decryptBlock(entry.getValue().toString());
-				privateKeyMap.put(entry.getKey(), this.getPrivateKey(data));
+				byte[] keyData = DruidConfigTool.decryptBlock(entry.getValue().toString());
+				privateKeyMap.put(entry.getKey(), DruidConfigTool.getPrivateKey(keyData));
 			} catch(Exception e) {
 				throw new IOException(e);
 			}
@@ -71,8 +71,8 @@ public class DruidHttpCertCenter implements CC {
 		publicKeyMap.clear();
 		for (Map.Entry<String,?> entry : publicKeys.entrySet()) {
 			try {
-				byte[] data = ConfigTools.decryptBlock(entry.getValue().toString());
-				publicKeyMap.put(entry.getKey(), this.getPublicKey(data));
+				byte[] keyData = DruidConfigTool.decryptBlock(entry.getValue().toString());
+				publicKeyMap.put(entry.getKey(), DruidConfigTool.getPublicKey(keyData));
 			} catch(Exception e) {
 				throw new IOException(e);
 			}
@@ -87,8 +87,8 @@ public class DruidHttpCertCenter implements CC {
 									certId, this.getToken());
 		String response = httpClient.get(url, null, "application/json", String.class);
 		try {
-			byte[] keyData = ConfigTools.decryptBlock(response);
-			return this.getPublicKey(keyData);
+			byte[] keyData = DruidConfigTool.decryptBlock(response);
+			return DruidConfigTool.getPublicKey(keyData);
 		} catch(Exception e) {
 			throw new IOException(e);
 		}
@@ -100,8 +100,8 @@ public class DruidHttpCertCenter implements CC {
 								 	certId, this.getToken());
 		String response = httpClient.get(url, null, "application/json", String.class);
 		try {
-			byte[] keyData = ConfigTools.decryptBlock(response);
-			return this.getPrivateKey(keyData);
+			byte[] keyData = DruidConfigTool.decryptBlock(response);
+			return DruidConfigTool.getPrivateKey(keyData);
 		} catch(Exception e) {
 			throw new IOException(e);
 		}
@@ -119,21 +119,4 @@ public class DruidHttpCertCenter implements CC {
 		this.serverUrl = url;
 	}
 	
-	private PublicKey getPublicKey(byte[] keyData) {
-		try {
-			KeyFactory keyFactory = KeyFactory.getInstance("RSA", "SunRsaSign");
-			return keyFactory.generatePublic(new X509EncodedKeySpec(keyData));
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Failed to get public key", e);
-		}
-	}
-	private PrivateKey getPrivateKey(byte[] keyData) {
-		try {
-			KeyFactory factory = KeyFactory.getInstance("RSA", "SunRsaSign");
-			return factory.generatePrivate(new PKCS8EncodedKeySpec(keyData));
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Failed to get private key", e);
-		}
-	}
-
 }
